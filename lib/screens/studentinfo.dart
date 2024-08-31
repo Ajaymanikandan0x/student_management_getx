@@ -11,32 +11,17 @@ import '../db/fuctions/functions.dart';
 import '../db/model.dart';
 
 class StudentInfo extends StatelessWidget {
-  late final String selectImg;
-  final String name;
-  final int studentId;
-  final int age;
-  final String batch;
-  final int? id;
-
-  // Separate controllers for each text field
-  final TextEditingController nameController = TextEditingController();
-
-  final TextEditingController ageController = TextEditingController();
-
-  final TextEditingController idController = TextEditingController();
-
-  final TextEditingController batchController = TextEditingController();
+  final Model student;
+  final Function(Model) onUpdate;
 
   final StudentController studentController = Get.find<StudentController>();
   StudentInfo({
     super.key,
-    required this.selectImg,
-    required this.name,
-    required this.studentId,
-    required this.age,
-    required this.batch,
-    required this.id,
-  });
+    required this.student,
+    required this.onUpdate,
+  }) {
+    studentController.initStudent(student);
+  }
 
   File? newImg;
 
@@ -82,26 +67,48 @@ class StudentInfo extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            TextField(
-              controller: nameController,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Obx(
+              () => TextField(
+                controller:
+                    TextEditingController(text: studentController.name.value),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                onChanged: (value) => studentController.updateName(value),
+              ),
             ),
             sizeBox,
-            TextField(
-              controller: idController,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Obx(
+              () => TextField(
+                controller: TextEditingController(
+                    text: studentController.studentId.value.toString()),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                onChanged: (value) =>
+                    studentController.updateStudentId(int.parse(value)),
+              ),
             ),
 
             sizeBox,
-            TextField(
-              controller: ageController,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Obx(
+              () => TextField(
+                controller: TextEditingController(
+                    text: studentController.age.value.toString()),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                onChanged: (value) =>
+                    studentController.updateAge(int.parse(value)),
+              ),
             ),
 
             sizeBox,
-            TextField(
-              controller: batchController,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Obx(
+              () => TextField(
+                controller:
+                    TextEditingController(text: studentController.batch.value),
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                onChanged: (value) => studentController.updateBatch(value),
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -126,18 +133,20 @@ class StudentInfo extends StatelessWidget {
                 ),
                 ElevatedButton.icon(
                   onPressed: () async {
-                    String updatedImage = base64Image ?? selectImg;
-                    final model = Model(
-                      id: id,
-                      name: nameController.text,
-                      age: int.parse(ageController.text),
-                      student_id: int.parse(idController.text),
-                      batch: batchController.text,
-                      picture: updatedImage,
+                    final updatedModel = Model(
+                      id: studentController.id.value,
+                      name: studentController.name.value,
+                      age: studentController.age.value,
+                      student_id: studentController.studentId.value,
+                      batch: studentController.batch.value,
+                      picture:
+                          base64Image ?? studentController.profImgPath.value,
                     );
-                    await updateStudent(model);
-                    final navigator = Navigator.of(context);
-                    navigator.pop();
+
+                    await updateStudent(updatedModel);
+                    onUpdate(updatedModel);
+                    studentController.saveStudent(); // to show success message
+                    Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(100, 50),
