@@ -52,12 +52,11 @@ class Userlist extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => StudentInfo(
-                            id: data.id,
-                            selectImg: data.picture!,
-                            name: data.name!,
-                            age: data.age!,
-                            studentId: data.student_id!,
-                            batch: data.batch!,
+                            student: data,
+                            onUpdate: (updatedModel) {
+                              // Update the student in the list
+                              updateStudentInList(updatedModel);
+                            },
                           ),
                         ),
                       );
@@ -95,6 +94,17 @@ class Userlist extends StatelessWidget {
         }
       },
     );
+  }
+
+  void updateStudentInList(Model updatedModel) {
+    // Find the index of the updated student
+    int index = studentController.students
+        .indexWhere((student) => student.id == updatedModel.id);
+
+    if (index != -1) {
+      // Replace the old student with the updated student
+      studentController.students[index] = updatedModel;
+    }
   }
 
   void showAlert(BuildContext context, var id) => showDialog(

@@ -8,8 +8,19 @@ class StudentController extends GetxController {
   RxString name = ''.obs;
   RxString batch = ''.obs;
   RxInt age = 0.obs;
+  RxInt id = 0.obs;
   RxInt studentId = 0.obs;
   var students = <Model>[].obs;
+
+  void initStudent(Model student) {
+    id.value = student.id!;
+    name.value = student.name ?? '';
+    studentId.value = student.student_id!;
+    age.value = student.age!;
+    batch.value = student.batch ?? '';
+    profImgPath.value = student.picture ?? '';
+  }
+
   void updateProfImgPath(String value) {
     profImgPath.value = value;
   }
@@ -30,7 +41,15 @@ class StudentController extends GetxController {
     studentId.value = value;
   }
 
-  void saveStudent() {
+  void updateStudentInList(Model updatedStudent) {
+    final index =
+        students.indexWhere((student) => student.id == updatedStudent.id);
+    if (index != -1) {
+      students[index] = updatedStudent;
+    }
+  }
+
+  saveStudent() {
     Get.snackbar(
       'Success',
       'Student add success fully',
