@@ -1,15 +1,18 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/material.dart';
-import 'package:student_app/pages/studentinfo.dart';
 
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../controllers/student_controller.dart';
 import '../../db/fuctions/functions.dart';
 import '../../db/model.dart';
+import '../studentinfo.dart';
 
 class Userlist extends StatelessWidget {
   final String? searchQuery;
-  const Userlist({Key? key, this.searchQuery}) : super(key: key);
+  Userlist({Key? key, this.searchQuery}) : super(key: key);
+  final StudentController studentController = Get.put(StudentController());
 
   @override
   Widget build(BuildContext context) {
@@ -24,12 +27,16 @@ class Userlist extends StatelessWidget {
             child: Text('No Student found'),
           );
         } else {
-          // Data is ready
-          print(snapshot.data);
-          return ValueListenableBuilder<List<Model>>(
-            valueListenable: studentNotifier,
-            builder:
-                (BuildContext context, List<Model> studentList, Widget? child) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              studentController.students.value = snapshot.data!;
+            });
+          }
+
+          return Obx(
+            () {
+              final studentList = studentController.students;
+
               if (searchQuery != null && studentList.isEmpty) {
                 return const Center(
                   child: Text('There is no student in this list'),
@@ -46,10 +53,10 @@ class Userlist extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (context) => StudentInfo(
                             id: data.id,
-                            selectimg: data.picture!,
+                            selectImg: data.picture!,
                             name: data.name!,
                             age: data.age!,
-                            student_id: data.student_id!,
+                            studentId: data.student_id!,
                             batch: data.batch!,
                           ),
                         ),
@@ -81,7 +88,7 @@ class Userlist extends StatelessWidget {
                 separatorBuilder: (context, index) => const Divider(
                   height: 2,
                 ),
-                itemCount: studentList.length ?? 10,
+                itemCount: studentList.length,
               );
             },
           );
@@ -107,11 +114,11 @@ class Userlist extends StatelessWidget {
             ),
             TextButton(
               onPressed: () async {
+                final navigator = Navigator.of(context);
                 await deleteStudent(id);
                 // Update UI after deletion
-                studentNotifier.value = await getAllStudents();
-                studentNotifier.notifyListeners();
-                Navigator.of(context).pop();
+                students.value = await getAllStudents();
+                navigator.pop();
               },
               child: const Text('Yes'),
             ),

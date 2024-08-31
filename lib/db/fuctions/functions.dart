@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:student_app/db/model.dart';
 
-ValueNotifier<List<Model>> studentNotifier = ValueNotifier([]);
+var students = <Model>[].obs;
 Future<Database> database() async {
   final db = await openDatabase(
     'student_db',
@@ -29,22 +30,15 @@ Future<List<Model>> getAllStudents({String? searchName}) async {
     where: searchName != null ? 'name LIKE ?' : null,
     whereArgs: searchName != null ? ['%$searchName%'] : null,
   );
-  final List<Model> templist = [];
-  maps.forEach((element) {
-    templist.add(Model.fromMap(element));
-  });
-  studentNotifier.value = templist;
-  studentNotifier.notifyListeners();
-
-  return templist;
+  final List<Model> studentList = maps.map((e) => Model.fromMap(e)).toList();
+  return studentList;
 }
 
 Future<void> addStudent(Model student) async {
   try {
     final db = await database();
-    final result = await db.insert('student_db', student.toMap());
-    studentNotifier.value.add(student); // Add student to existing list
-    studentNotifier.notifyListeners();
+    await db.insert('student_db', student.toMap());
+    students.add(student);
   } catch (e) {
     print("Error adding student: ${e.toString()}");
   }
@@ -54,9 +48,7 @@ Future<void> deleteStudent(int studentId) async {
   try {
     final db = await database();
     await db.rawDelete('DELETE FROM student_db WHERE id = ?', [studentId]);
-    studentNotifier.value.removeWhere(
-        (student) => student.id == studentId); // Remove from existing list
-    studentNotifier.notifyListeners();
+    students.removeWhere((student) => student.id == studentId);
   } catch (e) {
     print("Error deleting student: ${e.toString()}");
   }
@@ -68,10 +60,13 @@ Future<void> updateStudent(Model student) async {
     await db.update('student_db', student.toMap(),
         where: 'id = ?', whereArgs: [student.id]);
     print("Updating student with id: ${student.id}");
-    studentNotifier.value.removeWhere((element) => element.id == student.id);
-    studentNotifier.value.add(student); // Add the updated student to the list
-    studentNotifier.notifyListeners();
+    final index = students.indexWhere((element) => element.id == student.id);
+    if (index != -1) {
+      students[index] = student;
+    }
   } catch (e) {
-    print("Error updating student: ${e.toString()}");
+    if (kDebugMode) {
+      print("Error updating student: ${e.toString()}");
+    }
   }
 }

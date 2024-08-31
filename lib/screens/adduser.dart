@@ -1,34 +1,31 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:student_app/db/model.dart';
 
+import '../controllers/student_controller.dart';
 import '../db/fuctions/functions.dart';
 
-class Adduser extends StatefulWidget {
+class Adduser extends StatelessWidget {
   Adduser({super.key});
 
-  @override
-  State<Adduser> createState() => _AdduserState();
-}
+  final _name = TextEditingController();
 
-class _AdduserState extends State<Adduser> {
-  final name = TextEditingController();
+  final _age = TextEditingController();
 
-  final age = TextEditingController();
+  final _studentId = TextEditingController();
 
-  final student_id = TextEditingController();
+  final _batch = TextEditingController();
 
-  final batch = TextEditingController();
-
-  final formKey = GlobalKey<FormState>();
-
-  File? selectimg;
+  final _formKey = GlobalKey<FormState>();
   String? base64Image;
+
   bool isImageSelected = false;
+
+  final StudentController studentController = Get.find<StudentController>();
 
   @override
   Widget build(BuildContext context) {
@@ -42,28 +39,33 @@ class _AdduserState extends State<Adduser> {
         padding: const EdgeInsets.all(15),
         child: SingleChildScrollView(
             child: Form(
-          key: formKey,
+          key: _formKey,
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             children: <Widget>[
               GestureDetector(
                 onTap: () {
-                  _getImage();
+                  _getImage(context);
                 },
-                child: CircleAvatar(
-                  maxRadius: 80,
-                  foregroundColor: Colors.blueGrey,
-                  backgroundImage:
-                      selectimg != null ? FileImage(selectimg!) : null,
-                  child: selectimg == null
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Icon(Icons.person),
-                        )
-                      : null, // Remove this child if a placeholder isn't needed
+                child: Obx(
+                  () => CircleAvatar(
+                    maxRadius: 80,
+                    foregroundColor: Colors.blueGrey,
+                    backgroundImage: studentController
+                            .profImgPath.value.isNotEmpty
+                        ? MemoryImage(
+                            base64Decode(studentController.profImgPath.value))
+                        : null,
+                    child: studentController.profImgPath.value.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Icon(Icons.person),
+                          )
+                        : null, // Placeholder icon if no image is available
+                  ),
                 ),
               ),
-              sizedbox,
+              boxHeight,
               TextFormField(
                 style: const TextStyle(
                   letterSpacing: 2,
@@ -77,10 +79,10 @@ class _AdduserState extends State<Adduser> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                controller: name,
+                controller: _name,
                 validator: (value) {
                   if (value == null ||
-                      value!.isEmpty ||
+                      value.isEmpty ||
                       !RegExp(r'^[a-zA-Z]+$').hasMatch(value)) {
                     return "Please enter a correct name";
                   } else {
@@ -88,7 +90,7 @@ class _AdduserState extends State<Adduser> {
                   }
                 },
               ),
-              sizedbox,
+              boxHeight,
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -109,7 +111,7 @@ class _AdduserState extends State<Adduser> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        controller: age,
+                        controller: _age,
                         validator: (value) {
                           if (value == null) {
                             return "Please enter your age.";
@@ -143,10 +145,10 @@ class _AdduserState extends State<Adduser> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        controller: batch,
+                        controller: _batch,
                         validator: (value) {
                           if (value == null ||
-                              value!.isEmpty ||
+                              value.isEmpty ||
                               !RegExp(r'^[a-zA-Z 0-9]+$').hasMatch(value)) {
                             return "Please enter valid batch number";
                           } else {
@@ -158,7 +160,7 @@ class _AdduserState extends State<Adduser> {
                   ),
                 ],
               ),
-              sizedbox,
+              boxHeight,
               TextFormField(
                   keyboardType: TextInputType.number,
                   style: const TextStyle(
@@ -173,7 +175,7 @@ class _AdduserState extends State<Adduser> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  controller: student_id,
+                  controller: _studentId,
                   validator: (value) {
                     if (value == null) {
                       return "Please enter an ID";
@@ -184,14 +186,14 @@ class _AdduserState extends State<Adduser> {
 
                     return null; // Valid ID
                   }),
-              sizedbox,
+              boxHeight,
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      if (formKey.currentState!.validate()) {
-                        add_student(context);
+                      if (_formKey.currentState!.validate()) {
+                        _addStudent(context);
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -228,17 +230,17 @@ class _AdduserState extends State<Adduser> {
     );
   }
 
-  Widget sizedbox = const SizedBox(
+  Widget boxHeight = const SizedBox(
     height: 15,
   );
 
-  Future<void> _getImage() async {
+  Future<void> _getImage(BuildContext context) async {
     try {
       final picker = ImagePicker();
-      final XFile? imageselect =
+      final XFile? imageSelect =
           await picker.pickImage(source: ImageSource.gallery);
 
-      if (imageselect == null) {
+      if (imageSelect == null) {
         // No image selected
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -249,23 +251,21 @@ class _AdduserState extends State<Adduser> {
         return;
       }
       Uint8List imageBytes =
-          await imageselect.readAsBytes(); // Use Uint8List for image bytes
+          await imageSelect.readAsBytes(); // Use Uint8List for image bytes
       String base64Image = base64Encode(imageBytes);
-      setState(() {
-        selectimg = File(imageselect.path);
-        this.base64Image = base64Image;
-        isImageSelected = true;
-      });
+
+      studentController.updateProfImgPath(base64Image);
+      this.base64Image = base64Image;
     } catch (e) {
       print("Error picking image: $e");
     }
   }
 
-  Future<void> add_student(BuildContext context) async {
-    final _names = name.text.trim();
-    final _age = int.parse(age.text);
-    final _id = int.parse(student_id.text);
-    final _batch = batch.text;
+  Future<void> _addStudent(BuildContext context) async {
+    final names = _name.text.trim();
+    final age = int.parse(_age.text);
+    final id = int.parse(_studentId.text);
+    final batch = _batch.text;
     if (base64Image == null || base64Image!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -277,13 +277,14 @@ class _AdduserState extends State<Adduser> {
       return;
     } else {
       final model = Model(
-          name: _names,
-          age: _age,
-          student_id: _id,
-          batch: _batch,
+          name: names,
+          age: age,
+          student_id: id,
+          batch: batch,
           picture: base64Image);
       await addStudent(model);
-      Navigator.pushReplacementNamed(context, '/home');
+      final navigator = Navigator.of(context);
+      navigator.pushReplacementNamed('/home');
     }
   }
 }

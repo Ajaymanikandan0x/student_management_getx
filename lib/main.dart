@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:student_app/pages/adduser.dart';
-import 'package:student_app/pages/grid.dart';
-import 'package:student_app/pages/home.dart';
-import 'package:student_app/pages/login.dart';
+import 'package:student_app/screens/adduser.dart';
+import 'package:student_app/screens/grid.dart';
+import 'package:student_app/screens/home.dart';
+import 'package:student_app/screens/login.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    MaterialApp(
+  runApp(const Myapp());
+}
+
+class Myapp extends StatelessWidget {
+  const Myapp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(textTheme: GoogleFonts.poppinsTextTheme()),
       routes: {
@@ -17,6 +25,6 @@ void main() {
         '/adduser': (context) => Adduser(),
         '/grid': (context) => UserlistGrid(),
       },
-    ),
-  );
+    );
+  }
 }

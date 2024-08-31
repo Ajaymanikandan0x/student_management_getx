@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
-import 'package:student_app/pages/studentinfo.dart';
+import 'package:get/get.dart';
+import 'package:student_app/screens/studentinfo.dart';
 
 import '../../db/fuctions/functions.dart';
 import '../../db/model.dart';
+import '../controllers/student_controller.dart';
 
 class UserlistGrid extends StatelessWidget {
   UserlistGrid({Key? key}) : super(key: key);
-
+  final StudentController studentController = Get.put(StudentController());
   TextEditingController searchName = TextEditingController();
 
   @override
@@ -27,13 +30,13 @@ class UserlistGrid extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacementNamed(context, '/home');
               },
-              icon:const Icon(
+              icon: const Icon(
                 Icons.list,
                 color: Colors.white,
               ))
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(60),
           child: searchbar(),
         ),
       ),
@@ -49,19 +52,23 @@ class UserlistGrid extends StatelessWidget {
         builder: (BuildContext context, AsyncSnapshot<List<Model>> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             // Handle the case when data is still loading
-            return CircularProgressIndicator();
+            return const CircularProgressIndicator();
           } else if (snapshot.data == null || snapshot.data!.isEmpty) {
             return const Center(
               child: Text('No Student found'),
             );
           } else {
-            // Data is ready
-            print(snapshot.data);
-            return ValueListenableBuilder<List<Model>>(
-              valueListenable: studentNotifier,
-              builder: (BuildContext context, List<Model> studentList,
-                  Widget? child) {
-                if (searchName != null && studentList.isEmpty) {
+            // Update the observable list with the fetched data
+            if (snapshot.connectionState == ConnectionState.done) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                studentController.students.value = snapshot.data!;
+              });
+            }
+
+            return Obx(
+              () {
+                final studentList = studentController.students;
+                if (studentList.isEmpty) {
                   return const Center(
                     child: Text('There is no student in this list'),
                   );
@@ -83,10 +90,10 @@ class UserlistGrid extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => StudentInfo(
                               id: data.id,
-                              selectimg: data.picture!,
+                              selectImg: data.picture!,
                               name: data.name!,
                               age: data.age!,
-                              student_id: data.student_id!,
+                              studentId: data.student_id!,
                               batch: data.batch!,
                             ),
                           ),
@@ -105,7 +112,7 @@ class UserlistGrid extends StatelessWidget {
                               ),
                               maxRadius: 40,
                             ),
-                            SizedBox(height: 8.0),
+                            const SizedBox(height: 8.0),
                             Text(
                               data.name ?? "No name",
                               style: const TextStyle(
@@ -115,7 +122,7 @@ class UserlistGrid extends StatelessWidget {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: 4.0),
+                            const SizedBox(height: 4.0),
                             Text(
                               data.student_id.toString(),
                               textAlign: TextAlign.center,
@@ -160,8 +167,7 @@ class UserlistGrid extends StatelessWidget {
               onPressed: () async {
                 await deleteStudent(id);
                 // Update UI after deletion
-                studentNotifier.value = await getAllStudents();
-                studentNotifier.notifyListeners();
+                students.value = await getAllStudents();
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -185,9 +191,9 @@ class UserlistGrid extends StatelessWidget {
             searchStud(value);
           },
           decoration: InputDecoration(
-            contentPadding: EdgeInsets.all(5),
+            contentPadding: const EdgeInsets.all(5),
             hintText: 'Username',
-            prefix: Icon(Icons.search, color: Colors.black, size: 20),
+            prefix: const Icon(Icons.search, color: Colors.black, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -198,7 +204,6 @@ class UserlistGrid extends StatelessWidget {
   void searchStud(String searchName) async {
     final List<Model> dbStudents = await getAllStudents(searchName: searchName);
 
-    studentNotifier.value = dbStudents;
-    studentNotifier.notifyListeners();
+    students.value = dbStudents;
   }
 }

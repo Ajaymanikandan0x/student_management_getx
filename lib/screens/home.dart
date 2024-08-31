@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:student_app/db/fuctions/functions.dart';
-
-import 'package:student_app/pages/sub/listveiw.dart';
+import 'package:student_app/screens/sub/listveiw.dart';
 
 import '../db/model.dart';
 
@@ -26,13 +25,13 @@ class Home extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacementNamed(context, '/grid');
               },
-              icon:const Icon(
+              icon: const Icon(
                 Icons.grid_on,
                 color: Colors.white,
               ))
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(60),
+          preferredSize: const Size.fromHeight(60),
           child: searchbar(),
         ),
       ),
@@ -63,9 +62,9 @@ class Home extends StatelessWidget {
             searchStud(value);
           },
           decoration: InputDecoration(
-            contentPadding: EdgeInsets.all(5),
+            contentPadding: const EdgeInsets.all(5),
             hintText: 'Username',
-            prefix: Icon(Icons.search, color: Colors.black, size: 20),
+            prefix: const Icon(Icons.search, color: Colors.black, size: 20),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -76,7 +75,6 @@ class Home extends StatelessWidget {
   void searchStud(String searchName) async {
     final List<Model> dbStudents = await getAllStudents(searchName: searchName);
 
-    studentNotifier.value = dbStudents;
-    studentNotifier.notifyListeners();
+    students.value = dbStudents;
   }
 }
