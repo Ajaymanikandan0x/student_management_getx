@@ -177,7 +177,7 @@ class UserlistGrid extends StatelessWidget {
               onPressed: () async {
                 await deleteStudent(id);
                 // Update UI after deletion
-                students.value = await getAllStudents();
+                studentController.students.value = await getAllStudents(); // Updated to use studentController
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
