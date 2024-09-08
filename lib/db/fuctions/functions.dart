@@ -27,8 +27,8 @@ Future<List<Model>> getAllStudents({String? searchName}) async {
   final List<Map<String, dynamic>> maps = await db.query(
     'student_db',
     columns: ['id', 'name', 'age', 'student_id', 'batch', 'picture'],
-    where: searchName != null ? 'name LIKE ?' : null,
-    whereArgs: searchName != null ? ['%$searchName%'] : null,
+    where: searchName != null && searchName.isNotEmpty ? 'name LIKE ?' : null,
+    whereArgs: searchName != null && searchName.isNotEmpty ? ['%$searchName%'] : null,
   );
   final List<Model> studentList = maps.map((e) => Model.fromMap(e)).toList();
   return studentList;

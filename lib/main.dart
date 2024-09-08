@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:student_app/controllers/student_controller.dart';
 import 'package:student_app/screens/adduser.dart';
 import 'package:student_app/screens/grid.dart';
 import 'package:student_app/screens/home.dart';
@@ -8,6 +9,9 @@ import 'package:student_app/screens/login.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  Get.put(StudentController());
+
   runApp(const Myapp());
 }
 

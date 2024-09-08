@@ -177,7 +177,7 @@ class UserlistGrid extends StatelessWidget {
               onPressed: () async {
                 await deleteStudent(id);
                 // Update UI after deletion
-                students.value = await getAllStudents();
+                studentController.students.value = await getAllStudents(); // Updated to use studentController
                 Navigator.of(context).pop();
               },
               child: const Text('Yes'),
@@ -191,7 +191,7 @@ class UserlistGrid extends StatelessWidget {
         borderOnForeground: true,
         child: TextField(
           controller: searchName,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.text, // Changed to text for general use
           style: const TextStyle(
             letterSpacing: 2,
             color: Colors.black,
@@ -214,7 +214,6 @@ class UserlistGrid extends StatelessWidget {
 
   void searchStud(String searchName) async {
     final List<Model> dbStudents = await getAllStudents(searchName: searchName);
-
-    students.value = dbStudents;
+    studentController.students.value = dbStudents;
   }
 }

@@ -277,12 +277,15 @@ class Adduser extends StatelessWidget {
       return;
     } else {
       final model = Model(
-          name: names,
-          age: age,
-          student_id: id,
-          batch: batch,
-          picture: base64Image);
+        name: names,
+        age: age,
+        student_id: id,
+        batch: batch,
+        picture: base64Image,
+      );
       await addStudent(model);
+      studentController.students.add(model);
+      
       final navigator = Navigator.of(context);
       navigator.pushReplacementNamed('/home');
     }

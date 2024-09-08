@@ -17,80 +17,87 @@ class Userlist extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<Model>>(
-      future: getAllStudents(searchName: searchQuery),
+      future: getAllStudents(searchName: searchQuery ?? ''),
       builder: (BuildContext context, AsyncSnapshot<List<Model>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          // Handle the case when data is still loading
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         } else if (snapshot.data == null || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text('No Student found'),
-          );
+          return const Center(child: Text('No Student found'));
         } else {
-          if (snapshot.connectionState == ConnectionState.done) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              studentController.students.value = snapshot.data!;
-            });
-          }
+          // Update the observable list with the fetched data
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            studentController.students.value = snapshot.data!;
+          });
 
-          return Obx(
-            () {
-              final studentList = studentController.students;
+          return Obx(() {
+            final studentList = studentController.students;
 
-              if (searchQuery != null && studentList.isEmpty) {
-                return const Center(
-                  child: Text('There is no student in this list'),
-                );
-              }
-              return ListView.separated(
-                itemBuilder: (context, index) {
-                  final data = studentList[index];
+            // If the student list is empty, show a message
+            if (studentList.isEmpty) {
+              return const Center(
+                child: Text('No students available.'),
+              );
+            }
 
-                  return ListTile(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => StudentInfo(
-                            student: data,
-                            onUpdate: (updatedModel) {
-                              // Update the student in the list
-                              updateStudentInList(updatedModel);
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                    leading: CircleAvatar(
-                      backgroundImage: MemoryImage(
-                        Uint8List.fromList(
-                          base64Decode(data.picture!),
+            final filteredList = (searchQuery == null || searchQuery!.isEmpty)
+                ? studentList
+                : studentList
+                    .where((student) => student.name?.contains(searchQuery!) ?? false)
+                    .toList();
+
+            // If filteredList is empty after filtering, show a message
+            if (filteredList.isEmpty &&
+                searchQuery != null &&
+                searchQuery!.isNotEmpty) {
+              return const Center(
+                child: Text('No students match your search criteria.'),
+              );
+            }
+
+            return ListView.separated(
+              itemBuilder: (context, index) {
+                final data = filteredList[index];
+                return ListTile(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentInfo(
+                          student: data,
+                          onUpdate: (updatedModel) {
+                            updateStudentInList(updatedModel);
+                          },
                         ),
                       ),
-                      maxRadius: 40,
+                    );
+                  },
+                  leading: CircleAvatar(
+                    backgroundImage: MemoryImage(
+                      Uint8List.fromList(
+                        base64Decode(data.picture!),
+                      ),
                     ),
-                    title: Text(data.name ?? "No name",
-                        style: const TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 1.3,
-                        )),
-                    subtitle: Text(data.student_id.toString()),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        showAlert(context, data.id);
-                      },
-                    ),
-                  );
-                },
-                separatorBuilder: (context, index) => const Divider(
-                  height: 2,
-                ),
-                itemCount: studentList.length,
-              );
-            },
-          );
+                    maxRadius: 40,
+                  ),
+                  title: Text(data.name ?? "No name",
+                      style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 1.3,
+                      )),
+                  subtitle: Text(data.student_id.toString()),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      showAlert(context, data.id);
+                    },
+                  ),
+                );
+              },
+              separatorBuilder: (context, index) => const Divider(height: 2),
+              itemCount: filteredList.length,
+            );
+          });
         }
       },
     );
@@ -126,8 +133,8 @@ class Userlist extends StatelessWidget {
               onPressed: () async {
                 final navigator = Navigator.of(context);
                 await deleteStudent(id);
-                // Update UI after deletion
-                students.value = await getAllStudents();
+                final allStudents = await getAllStudents();
+                studentController.students.assignAll(allStudents);
                 navigator.pop();
               },
               child: const Text('Yes'),
