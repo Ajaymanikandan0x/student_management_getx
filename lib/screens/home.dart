@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:student_app/db/fuctions/functions.dart';
 import 'package:student_app/screens/sub/listveiw.dart';
 
+import '../controllers/student_controller.dart';
 import '../db/model.dart';
 
 class Home extends StatelessWidget {
   Home({Key? key}) : super(key: key);
+
+  final StudentController studentController = Get.find<StudentController>();
 
   TextEditingController searchName = TextEditingController();
 
@@ -51,7 +55,7 @@ class Home extends StatelessWidget {
         borderOnForeground: true,
         child: TextField(
           controller: searchName,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: TextInputType.text,
           style: const TextStyle(
             letterSpacing: 2,
             color: Colors.black,
@@ -74,7 +78,12 @@ class Home extends StatelessWidget {
 
   void searchStud(String searchName) async {
     final List<Model> dbStudents = await getAllStudents(searchName: searchName);
+    studentController.students.value = dbStudents;
 
-    students.value = dbStudents;
+    // Optionally, you can show a message if no students are found
+    if (dbStudents.isEmpty) {
+      Get.snackbar('No Results', 'No students match your search criteria.',
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 }

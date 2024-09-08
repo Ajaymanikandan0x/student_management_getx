@@ -13,10 +13,10 @@ class StudentController extends GetxController {
   var students = <Model>[].obs;
 
   void initStudent(Model student) {
-    id.value = student.id!;
+    id.value = student.id??0;
     name.value = student.name ?? '';
-    studentId.value = student.student_id!;
-    age.value = student.age!;
+    studentId.value = student.student_id??0;
+    age.value = student.age??0;
     batch.value = student.batch ?? '';
     profImgPath.value = student.picture ?? '';
   }
